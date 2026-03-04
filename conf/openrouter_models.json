@@ -25,11 +25,42 @@
   },
   "models": [
     {
-      "model_name": "anthropic/claude-opus-4.5",
+      "model_name": "anthropic/claude-opus-4.6",
       "aliases": [
         "opus",
-        "opus4.5",
+        "opus4.6",
         "claude-opus"
+      ],
+      "context_window": 1000000,
+      "max_output_tokens": 128000,
+      "supports_extended_thinking": false,
+      "supports_json_mode": false,
+      "supports_function_calling": false,
+      "supports_images": true,
+      "max_image_size_mb": 5.0,
+      "description": "Claude Opus 4.6 - Latest frontier reasoning model with 1M context",
+      "intelligence_score": 19
+    },
+    {
+      "model_name": "anthropic/claude-sonnet-4.6",
+      "aliases": [
+        "sonnet",
+        "sonnet4.6"
+      ],
+      "context_window": 1000000,
+      "max_output_tokens": 128000,
+      "supports_extended_thinking": false,
+      "supports_json_mode": false,
+      "supports_function_calling": false,
+      "supports_images": true,
+      "max_image_size_mb": 5.0,
+      "description": "Claude Sonnet 4.6 - Latest high-performance model with 1M context",
+      "intelligence_score": 14
+    },
+    {
+      "model_name": "anthropic/claude-opus-4.5",
+      "aliases": [
+        "opus4.5"
       ],
       "context_window": 200000,
       "max_output_tokens": 64000,
@@ -44,7 +75,6 @@
     {
       "model_name": "anthropic/claude-sonnet-4.5",
       "aliases": [
-        "sonnet",
         "sonnet4.5"
       ],
       "context_window": 200000,
@@ -103,12 +133,12 @@
       "intelligence_score": 8
     },
     {
-      "model_name": "google/gemini-3-pro-preview",
+      "model_name": "google/gemini-3.1-pro-preview",
       "aliases": [
         "pro",
         "gemini-pro",
         "gemini",
-        "gemini3",
+        "gemini3.1",
         "pro-openrouter"
       ],
       "context_window": 1048576,
@@ -119,8 +149,41 @@
       "supports_images": true,
       "max_image_size_mb": 20.0,
       "allow_code_generation": true,
-      "description": "Google's Gemini 3.0 Pro via OpenRouter with vision",
+      "description": "Google's Gemini 3.1 Pro via OpenRouter - frontier reasoning with enhanced SWE and agentic performance",
+      "intelligence_score": 19
+    },
+    {
+      "model_name": "google/gemini-3-pro-preview",
+      "aliases": [
+        "gemini3.0",
+        "gemini3"
+      ],
+      "context_window": 1048576,
+      "max_output_tokens": 65536,
+      "supports_extended_thinking": true,
+      "supports_json_mode": true,
+      "supports_function_calling": true,
+      "supports_images": true,
+      "max_image_size_mb": 20.0,
+      "allow_code_generation": true,
+      "description": "Google's Gemini 3.0 Pro via OpenRouter with vision (retiring March 9, 2026)",
       "intelligence_score": 18
+    },
+    {
+      "model_name": "google/gemini-3-flash-preview",
+      "aliases": [
+        "gemini-flash-3",
+        "flash3"
+      ],
+      "context_window": 1048576,
+      "max_output_tokens": 65536,
+      "supports_extended_thinking": true,
+      "supports_json_mode": true,
+      "supports_function_calling": true,
+      "supports_images": true,
+      "max_image_size_mb": 20.0,
+      "description": "Google's Gemini 3 Flash - near Pro-level reasoning at lower latency and cost",
+      "intelligence_score": 13
     },
     {
       "model_name": "google/gemini-2.5-pro",
