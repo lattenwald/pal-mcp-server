@@ -312,6 +312,55 @@ class ListModelsTool(BaseTool):
 
         output_lines.append("")
 
+        # Discovered models via live API
+        all_discovered: list[tuple[str, list[dict]]] = []
+
+        try:
+            from providers.live_model_fetcher import _format_discovered_context, get_live_model_fetcher
+
+            fetcher = get_live_model_fetcher()
+
+            if is_openrouter_configured:
+                or_models = await fetcher.fetch_openrouter_models(api_key=openrouter_key)
+                if or_models:
+                    all_discovered.append(("OpenRouter", or_models))
+
+            xai_key = get_env("XAI_API_KEY")
+            if xai_key:
+                xai_models = await fetcher.fetch_xai_models(api_key=xai_key)
+                if xai_models:
+                    all_discovered.append(("X.AI", xai_models))
+        except Exception:
+            logger.debug("Live model discovery failed", exc_info=True)
+
+        if all_discovered:
+            output_lines.append("## Discovered via API")
+            output_lines.append("**Note**: Models found on live endpoints but not in static config.")
+            output_lines.append("Use them by their full ID. Context shown as '?' when not reported by API.\n")
+
+            for source_name, models in all_discovered:
+                # For OpenRouter, sub-group by provider prefix
+                if source_name == "OpenRouter":
+                    by_prefix: dict[str, list[dict]] = {}
+                    for model in models:
+                        prefix = model["id"].split("/")[0]
+                        by_prefix.setdefault(prefix, []).append(model)
+                    for prefix, group in sorted(by_prefix.items()):
+                        output_lines.append(f"*{prefix.title()} (via OpenRouter):*")
+                        for model in group:
+                            ctx = model.get("context_length", 0)
+                            ctx_str = _format_discovered_context(ctx)
+                            output_lines.append(
+                                f"- `{model['id']}` — {model.get('name', model['id'])} ({ctx_str} context)"
+                            )
+                else:
+                    output_lines.append(f"*{source_name}:*")
+                    for model in models:
+                        ctx = model.get("context_length", 0)
+                        ctx_str = _format_discovered_context(ctx)
+                        output_lines.append(f"- `{model['id']}` — {model.get('name', model['id'])} ({ctx_str} context)")
+                output_lines.append("")
+
         # Check Custom API
         custom_url = get_env("CUSTOM_API_URL")
 
