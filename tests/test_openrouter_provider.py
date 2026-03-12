@@ -79,10 +79,10 @@ class TestOpenRouterProvider:
         provider = OpenRouterProvider(api_key="test-key")
 
         # Test alias resolution
-        assert provider._resolve_model_name("opus") == "anthropic/claude-opus-4.5"
+        assert provider._resolve_model_name("opus") == "anthropic/claude-opus-4.6"
         assert provider._resolve_model_name("opus4.5") == "anthropic/claude-opus-4.5"
         assert provider._resolve_model_name("opus4.1") == "anthropic/claude-opus-4.1"
-        assert provider._resolve_model_name("sonnet") == "anthropic/claude-sonnet-4.5"
+        assert provider._resolve_model_name("sonnet") == "anthropic/claude-sonnet-4.6"
         assert provider._resolve_model_name("sonnet4.1") == "anthropic/claude-sonnet-4.1"
         assert provider._resolve_model_name("o3") == "openai/o3"
         assert provider._resolve_model_name("o3-mini") == "openai/o3-mini"
@@ -98,8 +98,8 @@ class TestOpenRouterProvider:
         assert provider._resolve_model_name("r1") == "deepseek/deepseek-r1-0528"
 
         # Test case-insensitive
-        assert provider._resolve_model_name("OPUS") == "anthropic/claude-opus-4.5"
-        assert provider._resolve_model_name("SONNET") == "anthropic/claude-sonnet-4.5"
+        assert provider._resolve_model_name("OPUS") == "anthropic/claude-opus-4.6"
+        assert provider._resolve_model_name("SONNET") == "anthropic/claude-sonnet-4.6"
         assert provider._resolve_model_name("O3") == "openai/o3"
         assert provider._resolve_model_name("Mistral") == "mistralai/mistral-large-2411"
 
@@ -307,18 +307,18 @@ class TestOpenRouterRegistry:
 
         registry = OpenRouterModelRegistry()
 
-        # Test known model (opus alias now points to 4.5)
+        # Test known model (opus alias now points to 4.6)
         caps = registry.get_capabilities("opus")
         assert caps is not None
-        assert caps.model_name == "anthropic/claude-opus-4.5"
-        assert caps.context_window == 200000  # Claude's context window
+        assert caps.model_name == "anthropic/claude-opus-4.6"
+        assert caps.context_window == 1000000  # Claude Opus 4.6 context window
 
-        # Test using full model name for 4.5
-        caps = registry.get_capabilities("anthropic/claude-opus-4.5")
+        # Test using full model name for 4.6
+        caps = registry.get_capabilities("anthropic/claude-opus-4.6")
         assert caps is not None
-        assert caps.model_name == "anthropic/claude-opus-4.5"
+        assert caps.model_name == "anthropic/claude-opus-4.6"
 
-        # Test opus4.5 alias
+        # Test opus4.5 alias (still resolves to 4.5)
         caps = registry.get_capabilities("opus4.5")
         assert caps is not None
         assert caps.model_name == "anthropic/claude-opus-4.5"
@@ -343,12 +343,14 @@ class TestOpenRouterRegistry:
 
         registry = OpenRouterModelRegistry()
 
-        # All these should resolve to Claude Sonnet 4.5
-        sonnet_45_aliases = ["sonnet", "sonnet4.5"]
-        for alias in sonnet_45_aliases:
-            config = registry.resolve(alias)
-            assert config is not None
-            assert config.model_name == "anthropic/claude-sonnet-4.5"
+        # "sonnet" now resolves to 4.6, "sonnet4.5" still resolves to 4.5
+        config = registry.resolve("sonnet")
+        assert config is not None
+        assert config.model_name == "anthropic/claude-sonnet-4.6"
+
+        config = registry.resolve("sonnet4.5")
+        assert config is not None
+        assert config.model_name == "anthropic/claude-sonnet-4.5"
 
         # Test Sonnet 4.1 alias
         config = registry.resolve("sonnet4.1")
