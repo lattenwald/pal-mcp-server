@@ -142,6 +142,60 @@ class TestLiveModelFetcher:
             assert models == first
 
     @pytest.mark.asyncio
+    async def test_fetch_xai_models_filters_grok_prefix(self):
+        """X.AI fetcher only returns grok-* model IDs."""
+        fetcher = LiveModelFetcher(cache_ttl_seconds=3600)
+
+        with patch.object(fetcher, "_http_get_json", new_callable=AsyncMock) as mock_get:
+            mock_get.return_value = {
+                "data": [
+                    {"id": "grok-4", "object": "model"},
+                    {"id": "grok-4-1-fast-reasoning", "object": "model"},
+                    {"id": "grok-5-beta", "object": "model"},
+                    {"id": "embedding-v1", "object": "model"},
+                    {"id": "moderation-latest", "object": "model"},
+                ]
+            }
+
+            models = await fetcher.fetch_xai_models(api_key="test-key")
+
+            ids = {m["id"] for m in models}
+            assert "grok-5-beta" in ids
+            assert "embedding-v1" not in ids
+            assert "moderation-latest" not in ids
+
+    @pytest.mark.asyncio
+    async def test_fetch_xai_models_excludes_static_registry(self):
+        """X.AI fetcher excludes models already in static XAI registry."""
+        fetcher = LiveModelFetcher(cache_ttl_seconds=3600)
+        fetcher._static_xai_model_ids = {"grok-4", "grok-4-1-fast-reasoning"}
+
+        with patch.object(fetcher, "_http_get_json", new_callable=AsyncMock) as mock_get:
+            mock_get.return_value = {
+                "data": [
+                    {"id": "grok-4", "object": "model"},
+                    {"id": "grok-4-1-fast-reasoning", "object": "model"},
+                    {"id": "grok-5-beta", "object": "model"},
+                ]
+            }
+
+            models = await fetcher.fetch_xai_models(api_key="test-key")
+
+            ids = {m["id"] for m in models}
+            assert ids == {"grok-5-beta"}
+
+    @pytest.mark.asyncio
+    async def test_fetch_xai_models_returns_empty_on_error(self):
+        """X.AI fetcher returns empty list on HTTP error."""
+        fetcher = LiveModelFetcher(cache_ttl_seconds=3600)
+
+        with patch.object(fetcher, "_http_get_json", new_callable=AsyncMock) as mock_get:
+            mock_get.side_effect = Exception("connection refused")
+
+            models = await fetcher.fetch_xai_models(api_key="test-key")
+            assert models == []
+
+    @pytest.mark.asyncio
     async def test_top_n_filtering(self):
         """Only top N models per provider prefix are returned."""
         fetcher = LiveModelFetcher(cache_ttl_seconds=3600, top_n_per_provider=1)

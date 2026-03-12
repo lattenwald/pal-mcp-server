@@ -324,6 +324,12 @@ class ListModelsTool(BaseTool):
                 or_models = await fetcher.fetch_openrouter_models(api_key=openrouter_key)
                 if or_models:
                     all_discovered.append(("OpenRouter", or_models))
+
+            xai_key = get_env("XAI_API_KEY")
+            if xai_key:
+                xai_models = await fetcher.fetch_xai_models(api_key=xai_key)
+                if xai_models:
+                    all_discovered.append(("X.AI", xai_models))
         except Exception:
             logger.debug("Live model discovery failed", exc_info=True)
 

@@ -73,6 +73,7 @@ class LiveModelFetcher:
 
         self._cache: dict[str, dict[str, Any]] = {}
         self._static_model_ids: set[str] | None = None
+        self._static_xai_model_ids: set[str] | None = None
 
     # ------------------------------------------------------------------
     # Public API
@@ -110,6 +111,45 @@ class LiveModelFetcher:
         filtered = self._filter_and_rank(raw_models)
         self._set_cached("openrouter", filtered)
         return filtered
+
+    async def fetch_xai_models(self, *, api_key: str) -> list[dict[str, Any]]:
+        """Fetch models from X.AI, filtered to grok-* and cached.
+
+        Returns list of dicts with keys: id, name, context_length.
+        Only includes grok-* models NOT already in the static XAI registry.
+        """
+        cached = self._get_cached("xai")
+        if cached is not None:
+            return cached
+
+        try:
+            data = await self._http_get_json(
+                "https://api.x.ai/v1/models",
+                headers={"Authorization": f"Bearer {api_key}"},
+            )
+        except Exception:
+            logger.warning("Failed to fetch live models from X.AI", exc_info=True)
+            stale = self._get_stale_cached("xai")
+            return stale if stale is not None else []
+
+        static_ids = self._get_static_xai_model_ids()
+        result = []
+        for model in data.get("data", []):
+            model_id = model.get("id", "")
+            if not model_id.startswith("grok-"):
+                continue
+            if model_id in static_ids:
+                continue
+            result.append(
+                {
+                    "id": model_id,
+                    "name": model.get("name", model_id),
+                    "context_length": model.get("context_length", 0),
+                }
+            )
+
+        self._set_cached("xai", result)
+        return result
 
     # ------------------------------------------------------------------
     # Filtering
@@ -172,6 +212,22 @@ class LiveModelFetcher:
             self._static_model_ids = set()
 
         return self._static_model_ids
+
+    def _get_static_xai_model_ids(self) -> set[str]:
+        """Lazily load the set of model IDs from the static XAI registry."""
+        if self._static_xai_model_ids is not None:
+            return self._static_xai_model_ids
+
+        try:
+            from providers.registries.xai import XAIModelRegistry
+
+            registry = XAIModelRegistry()
+            self._static_xai_model_ids = set(registry.list_models())
+        except Exception:
+            logger.debug("Could not load static XAI registry for exclusion", exc_info=True)
+            self._static_xai_model_ids = set()
+
+        return self._static_xai_model_ids
 
     # ------------------------------------------------------------------
     # Cache
